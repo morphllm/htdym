@@ -11,7 +11,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { roofline, Roofline } from '../core/engine/roofline';
 import { CHIPS_BY_ID } from '../core/hardware/chips';
 import { ModelSpec } from '../core/model/models';
-import { machineChips, machineKey, machineLabel, maxNodesOf } from './machines';
+import { machineChips, machineKey, machineLabel, maxNodesOf } from '../core/hardware/machines';
 import { hasError, UiChip, UiOverlap, UiResult, UiWorkload } from './results';
 import { makeSearchClient } from './searchClient';
 

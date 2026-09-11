@@ -1,26 +1,17 @@
 import type { Roofline } from '../core/engine/roofline';
-import type { ShardingRole } from '../core/engine/sim/ir/sharding/roles';
-import type { Diagnostic, Mesh, MoeDispatch } from '../core/engine/surface/deploy';
+import type { Diagnostic } from '../core/engine/surface/deploy';
 import type { ChipSpec } from '../core/hardware/chips';
+import type { ChipOnMachine } from '../core/hardware/machines';
 import type { OverlapOptions } from '../core/engine/sim/cost/select';
+import type { Boundedness, ComponentTimes, ConfigResult } from '../core/engine/optimizer/enrich';
 
 export type { Diagnostic };
 
 // A chip as the UI holds it: the editable spec plus the machine the user
-// picked for it (a ring-fabric slice name or a switched-fabric node count),
-// both defaulting in machineOf when unset.
-export interface UiChip extends ChipSpec {
-  slice?: string;
-  nodes?: number;
-}
+// picked for it.
+export type UiChip = ChipOnMachine;
 
-export interface ComponentTimes {
-  compute: number;
-  memory: number;
-  comms: number;
-}
-
-export type Boundedness = keyof ComponentTimes;
+export type { Boundedness, ComponentTimes };
 
 export interface UiWorkload {
   prefillLen: number;
@@ -34,79 +25,19 @@ export interface UiWorkload {
 // applies them, 'dag' reads overlap off the op graph and ignores them)
 export type UiOverlap = OverlapOptions;
 
-// One streamed configuration row: a role-size tuple's best placement and
-// dispatch, evaluated for both phases. Mostly display-ready scalars, plus
-// the winning mesh so the details view can re-lower the op trace.
-export interface UiResult {
-  id: string;
-  chipId: string;
-  sizes: Partial<Record<ShardingRole, number>>;
-  placement: string;
-  // how many of the TP ranks hold a sequence slice instead of a head slice
-  decodeContextParallel: number;
-  dispatch: MoeDispatch;
-  // the placement's resolved mesh, for re-lowering the trace in the details DAG
-  mesh: Mesh;
-  nChips: number;
-  workload: { prefillLen: number; generateLen: number };
-  diagnostics: Diagnostic[];
-  memory?: {
-    weightBytesPerChip: number;
-    // HBM left for KV after the weights land: what actually caps batch
-    kvSpaceBytesPerChip: number;
-    kvBytesPerSeqPerChip: number;
-    // the paged and reserved-state parts of kvBytesPerSeqPerChip, and how
-    // many state slots the latter reserves per sequence
-    pagedKvBytesPerSeqPerChip?: number;
-    stateBytesPerSeqPerChip?: number;
-    stateSlotsPerSeq?: number;
-    // machine total (per-chip residency x DPA groups)
-    maxResidentSeqs: number;
-  };
-  // cost-efficiency for the whole workload vs the HMVP baseline; filled at
-  // render time from the live prices and baseline, never by the worker
+// A streamed configuration row: the engine's result plus the efficiency
+// figures filled at render time from the live prices and baseline, never
+// by the worker.
+export interface UiResult extends ConfigResult {
+  // cost-efficiency for the whole workload vs the HMVP baseline
   requestEff?: number;
-  prefill?: {
-    tokPerSecPerChip: number;
-    ttft: number;
-    batchSeqs: number;
-    mfu: number;
-    fracOfCeiling: number;
-    boundBy: Boundedness;
-    components: ComponentTimes;
-    // the visible split of the phase time after overlap (sums to the time)
-    visible: ComponentTimes;
-    // (rate ÷ relative price) over the HMVP's rate; filled at render time
-    // from the live prices and baseline, never by the worker
+  prefill?: ConfigResult['prefill'] & {
+    // (rate ÷ relative price) over the HMVP's rate
     eff?: number;
     // rate over the HMVP's rate — pure speed, price not included
     relRate?: number;
   };
-  decode?: {
-    tokPerSecPerChip: number;
-    tokPerSecPerUser: number;
-    tpot: number;
-    stepTime: number;
-    batchPerStage: number;
-    residentSeqs: number;
-    mfu: number;
-    // model bandwidth utilization: weight + KV bytes streamed per step over
-    // what the chip's peak HBM bandwidth could move in a step
-    mbu: number;
-    fracOfCeiling: number;
-    // operating tok/s/chip over this config's own B -> inf rate (KV gate
-    // off); low = throughput is KV-room-starved, not sharding-limited
-    batchSaturation?: number;
-    boundBy: Boundedness;
-    components: ComponentTimes;
-    // the visible split of the step time after overlap (sums to the time)
-    visible: ComponentTimes;
-    // (rate ÷ relative price) over the HMVP's rate; filled at render time
-    // from the live prices and baseline, never by the worker
-    eff?: number;
-    // rate over the HMVP's rate — pure speed, price not included
-    relRate?: number;
-  };
+  decode?: ConfigResult['decode'] & { eff?: number; relRate?: number };
 }
 
 // One chip's slot in the leaderboard: its fixed machine, the hardware

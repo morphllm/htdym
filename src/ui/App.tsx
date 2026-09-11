@@ -24,7 +24,7 @@ import {
   machineKey,
   machineLabel,
   machineVariants,
-} from './machines';
+} from '../core/hardware/machines';
 import './app.css';
 
 function SailResearchLogo() {

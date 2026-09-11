@@ -5,7 +5,13 @@ import { kvBytesPerSeq } from '../../core/model/utils';
 import { MODEL_PRESETS, ModelSpec } from '../../core/model/models';
 import { DTYPE_BYTES } from '../../core/model/dtype';
 import { fmtBytes } from '../format';
-import { machineAtNodes, machineLabel, machineOf, maxNodesOf, slicesOf } from '../machines';
+import {
+  machineAtNodes,
+  machineLabel,
+  machineOf,
+  maxNodesOf,
+  slicesOf,
+} from '../../core/hardware/machines';
 import { CostBasis, H100_ID, relPriceOf, relPriceToDollars } from '../pricing';
 import { UiChip, UiWorkload } from '../results';
 import type { Scheduler } from '../../core/engine/sim/cost/select';
