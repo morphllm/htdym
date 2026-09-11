@@ -38,7 +38,7 @@ export type SearchUpdate = { id: number; key: string } & (
 export function makeSearchClient(onUpdate: (u: SearchUpdate) => void) {
   const workers = new Map<string, Worker>();
   const buffer: SearchUpdate[] = [];
-  let flush = 0;
+  let flush: ReturnType<typeof setTimeout> | 0 = 0;
   const onMessage = (e: MessageEvent<SearchUpdate>) => {
     buffer.push(e.data);
     if (!flush)

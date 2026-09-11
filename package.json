@@ -8,11 +8,12 @@
     "build": "tsc --noEmit && vite build",
     "test": "vitest run",
     "bench": "vitest run tests/bench.test.ts",
-    "search": "vite-node scripts/search.ts --",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "build:cli": "node scripts/build-cli.mjs",
+    "cli": "node scripts/build-cli.mjs && node dist/cli/estimate.mjs"
   },
   "prettier": {
     "printWidth": 100,
@@ -32,12 +33,20 @@
     "recharts": "^2.12.7"
   },
   "devDependencies": {
+    "@types/node": "^22.20.2",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
+    "esbuild": "^0.21.5",
     "prettier": "^3.6.2",
     "typescript": "^5.5.3",
     "vite": "^5.3.4",
     "vitest": "^2.0.4"
+  },
+  "bin": {
+    "estimate": "dist/cli/estimate.mjs"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }
