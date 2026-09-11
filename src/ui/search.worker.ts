@@ -1,7 +1,8 @@
 import { Candidate, searchShardings, searchTuples } from '../core/engine/optimizer/search';
 import { ServingPolicy } from '../core/engine/optimizer/policy';
 import { matmulSeconds, roofline } from '../core/engine/roofline';
-import { makeNaiveOpCostSumBackend } from '../core/engine/sim/cost/naiveOpCostSum';
+import { makeCostBackend } from '../core/engine/sim/cost/select';
+import type { ResourceCostBackend } from '../core/engine/sim/cost/types';
 import { evaluateDecodeAtBatch } from '../core/engine/sim/run/decode';
 import { evaluatePrefill } from '../core/engine/sim/run/prefill';
 import { runnableOn } from '../core/engine/sim/run/validate';
@@ -29,7 +30,7 @@ async function run(req: SearchRequest) {
   const model = MODEL_PRESETS.find((m) => m.name === req.modelName);
   if (!model) return;
 
-  const backend = makeNaiveOpCostSumBackend(req.overlap);
+  const backend = makeCostBackend(req.overlap);
   const policy: ServingPolicy = {
     batching: req.workload.batching,
     sloTokPerSecPerUser: req.workload.sloTokPerSecPerUser || undefined,
@@ -85,7 +86,7 @@ async function run(req: SearchRequest) {
   }
 }
 
-type Backend = ReturnType<typeof makeNaiveOpCostSumBackend>;
+type Backend = ResourceCostBackend;
 
 // A decode-search winner filled out into the UI's config row: prefill is
 // evaluated on the same deployment (throughput at a full-machine batch of
@@ -174,6 +175,7 @@ function toRow(
       batchSaturation: sat.ok ? dec.tokPerSecPerChip / sat.tokPerSecPerChip : undefined,
       boundBy: bound(dec.cost.busy),
       components: dec.cost.busy,
+      visible: dec.cost.parts,
     },
     prefill: pfThrough.ok
       ? {
@@ -186,6 +188,7 @@ function toRow(
           fracOfCeiling: pfThrough.tokPerSecPerChip / hw.prefillCeiling,
           boundBy: bound(pfThrough.cost.busy),
           components: pfThrough.cost.busy,
+          visible: pfThrough.cost.parts,
         }
       : undefined,
   };

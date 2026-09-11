@@ -12,7 +12,7 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import type { ModelSpec } from '../../core/model/models';
-import { makeNaiveOpCostSumBackend } from '../../core/engine/sim/cost/naiveOpCostSum';
+import { makeCostBackend } from '../../core/engine/sim/cost/select';
 import { evaluateDecodeAtBatch } from '../../core/engine/sim/run/decode';
 import { evaluatePrefill } from '../../core/engine/sim/run/prefill';
 import type { ExpandedOp, OpId } from '../../core/engine/sim/ir/ops';
@@ -357,9 +357,10 @@ export function OpDagView({
   const { run, backend } = useMemo(() => {
     const deployment: Deployment = { chip, mesh: result.mesh, moeDispatch: result.dispatch };
     const input = { model, deployment, workload: result.workload };
-    const costBackend = makeNaiveOpCostSumBackend({
+    const costBackend = makeCostBackend({
       memoryOverlap: overlap.memoryOverlap,
       commsOverlap: overlap.commsOverlap,
+      scheduler: overlap.scheduler,
     });
     const pp = result.sizes.PP ?? 1;
     const ev =
@@ -374,7 +375,7 @@ export function OpDagView({
       // same context the run bound, so this shares its reshard-plan cache
       backend: costBackend(deployment),
     };
-  }, [result, model, chip, overlap.memoryOverlap, overlap.commsOverlap, phase]);
+  }, [result, model, chip, overlap.memoryOverlap, overlap.commsOverlap, overlap.scheduler, phase]);
 
   const stages = run?.perStageTrace ?? [];
   const stageCount = stages.length;

@@ -5,16 +5,11 @@ import { naiveOverlapBreakdown } from './helpers/naiveOverlap';
 
 import type { OpId, Segment } from '../ir/ops';
 import type { HardwareResource } from '../../surface/api';
-import type { CostBackend, TraceCost } from './types';
+import type { CostBackend, ResourceTraceCost } from './types';
 
 export type { CostBackend, TraceCost } from './types';
 
-export interface NaiveOpCostSumTraceCost extends TraceCost {
-  // per-resource busy sums before overlap
-  busy: Record<HardwareResource, number>;
-  // per-resource cost sums after overlap
-  parts: Record<HardwareResource, number>;
-}
+export type NaiveOpCostSumTraceCost = ResourceTraceCost;
 
 export function makeNaiveOpCostSumBackend(options: {
   memoryOverlap: number;

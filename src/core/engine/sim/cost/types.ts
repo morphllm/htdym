@@ -16,6 +16,17 @@ export interface TraceCost {
   busyPerOp?: ReadonlyMap<OpId, Record<HardwareResource, number>>;
 }
 
+// A trace price that also says how long each resource was busy (before
+// any overlap) and how the wall-clock time splits between them (after).
+// Both naive and scheduled backends answer this, so anything that shows
+// a bound-by or a stream bar can take either.
+export interface ResourceTraceCost extends TraceCost {
+  // per-resource busy sums before overlap
+  busy: Record<HardwareResource, number>;
+  // additive visible parts after overlap, they sum to time
+  parts: Record<HardwareResource, number>;
+}
+
 // A backend bound to one evaluation's context. priceCollective()
 // is used by the reshard expander to price candidate collectives.
 export interface BoundBackend {
@@ -38,6 +49,11 @@ export interface BoundBackend {
 
 // A backend owns all physics: bind it to a deployment to price anything.
 export type CostBackend = (deployment: Deployment) => BoundBackend;
+
+// A backend whose trace prices carry the per-resource breakdown.
+export type ResourceCostBackend = (
+  deployment: Deployment,
+) => BoundBackend & { priceTrace(trace: Segment[]): ResourceTraceCost };
 
 // The price a given backend's priceTrace returns: the backend-specific
 // cost breakdown of one stage trace.

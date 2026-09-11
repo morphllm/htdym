@@ -2,6 +2,7 @@ import type { Roofline } from '../core/engine/roofline';
 import type { ShardingRole } from '../core/engine/sim/ir/sharding/roles';
 import type { Diagnostic, Mesh, MoeDispatch } from '../core/engine/surface/deploy';
 import type { ChipSpec } from '../core/hardware/chips';
+import type { OverlapOptions } from '../core/engine/sim/cost/select';
 
 export type { Diagnostic };
 
@@ -29,10 +30,9 @@ export interface UiWorkload {
   batching?: 'max' | 'b1';
 }
 
-export interface UiOverlap {
-  memoryOverlap: number;
-  commsOverlap: number;
-}
+// the two overlap constants plus which scheduler reads them ('naive'
+// applies them, 'dag' reads overlap off the op graph and ignores them)
+export type UiOverlap = OverlapOptions;
 
 // One streamed configuration row: a role-size tuple's best placement and
 // dispatch, evaluated for both phases. Mostly display-ready scalars, plus
@@ -74,6 +74,8 @@ export interface UiResult {
     fracOfCeiling: number;
     boundBy: Boundedness;
     components: ComponentTimes;
+    // the visible split of the phase time after overlap (sums to the time)
+    visible: ComponentTimes;
     // (rate ÷ relative price) over the HMVP's rate; filled at render time
     // from the live prices and baseline, never by the worker
     eff?: number;
@@ -97,6 +99,8 @@ export interface UiResult {
     batchSaturation?: number;
     boundBy: Boundedness;
     components: ComponentTimes;
+    // the visible split of the step time after overlap (sums to the time)
+    visible: ComponentTimes;
     // (rate ÷ relative price) over the HMVP's rate; filled at render time
     // from the live prices and baseline, never by the worker
     eff?: number;
