@@ -25,6 +25,8 @@ export interface SearchOptions<TBackend extends CostBackend> extends EvalOptions
 
 export interface Candidate<TBackend extends CostBackend> {
   deployment: Deployment;
+  // the backend that priced it, so the candidate can be filled out further
+  backend: TBackend;
   // decode operating batch the policy chose (absent for prefill)
   batch?: number;
   result: Extract<DecodeEvaluation<TBackend> | PrefillEvaluation<TBackend>, { ok: true }>;
@@ -132,8 +134,10 @@ export function* searchShardings<TBackend extends CostBackend>(
   }
 }
 
-// Evaluate one deployment, dropping infeasible results and computing its search score.
-function evaluateWithSearchOpts<TBackend extends CostBackend>(
+// Evaluate one deployment, dropping infeasible results and computing its
+// search score: what the search does per placement, for callers scoring
+// one explicit deployment the same way.
+export function evaluateWithSearchOpts<TBackend extends CostBackend>(
   input: SimInput,
   opts: SearchOptions<TBackend>,
 ): Candidate<TBackend> | null {
@@ -164,5 +168,5 @@ function evaluateWithSearchOpts<TBackend extends CostBackend>(
     score = (score * 3600) / price; // tokens per dollar
   }
 
-  return { deployment: input.deployment, batch, result, score };
+  return { deployment: input.deployment, backend: opts.costBackend, batch, result, score };
 }

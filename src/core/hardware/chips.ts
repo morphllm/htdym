@@ -314,6 +314,39 @@ export const CHIPS: ChipSpec[] = [
     tdp: 1400,
   },
   {
+    // ESTIMATED ENTRY (Morph, 2026-09): no vendor datasheet is encoded here
+    // yet. Every number below is derived: B300 SXM formats stepped up the way
+    // GB200 steps up B200 (bf16 2250 -> 2500), so fp8/mxfp8 5000e12 and
+    // fp4/mxfp4/nvfp4 15000e12 (NVIDIA quotes the rack at ~1.1 EF dense FP4
+    // over 72 GPUs -> ~15 PF each); HBM 288 GB with 270e9 usable and 8e12 B/s
+    // as on the B300 entry; NVLink5 900e9 one-way at 2e-6 s, domain 64 of 72
+    // for the same reason as GB200; costPerHour 6.75 = B300's 5.4 x the
+    // GB200-over-B200 NVL72 premium (1.25); tdp 1650 = ~3.6 kW superchip
+    // minus ~300 W of Grace, over its 2 GPUs. Update from the datasheet and
+    // from the actual rack rental rate.
+    id: 'gb300-nvl72',
+    mmaShapes: BLACKWELL_ULTRA_MMA,
+    name: 'GB300 NVL72',
+    vendor: 'NVIDIA',
+    formats: {
+      bf16: 2500e12,
+      fp8: 5000e12,
+      mxfp8: 5000e12,
+      fp4: 15000e12,
+      mxfp4: 15000e12,
+      nvfp4: 15000e12,
+      int8: 'kernel-widened',
+      int4: 'kernel-widened',
+    },
+    hbmCapacity: 270e9,
+    hbmBandwidth: 8e12,
+    interconnect: { bandwidthPerChip: 900e9, latency: 2e-6, domainSize: 64 },
+    realizableFlopsFrac: 0.75,
+    realizableHbmBwFrac: 0.85,
+    costPerHour: 6.75,
+    tdp: 1650,
+  },
+  {
     id: 'vr100-nvl72',
     mmaShapes: RUBIN_MMA,
     name: 'VR100 NVL72',

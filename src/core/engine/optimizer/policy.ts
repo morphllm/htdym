@@ -36,6 +36,7 @@ export function operatingBatch<TBackend extends CostBackend>(
     deployment,
     stages,
     workload.prefillLen + workload.generateLen,
+    opts.statePool,
   );
   // batch sizes ONE of the pp microbatches
   const cap = Math.floor(memory.maxResidentSeqsPerChip / pp);

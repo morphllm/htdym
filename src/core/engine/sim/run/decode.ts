@@ -36,6 +36,7 @@ export function evaluateDecodeAtBatch<TBackend extends CostBackend>(
     deployment,
     stages,
     workload.prefillLen + workload.generateLen,
+    opts.statePool,
   );
   // each DPA group holds batch/dpa of every resident microbatch's KV
   if (!opts.ignoreKvCapacity && (batch / dpa) * microbatches > memory.maxResidentSeqsPerChip) {

@@ -5,9 +5,16 @@ import { kvBytesPerSeq } from '../../core/model/utils';
 import { MODEL_PRESETS, ModelSpec } from '../../core/model/models';
 import { DTYPE_BYTES } from '../../core/model/dtype';
 import { fmtBytes } from '../format';
-import { machineAtNodes, machineLabel, machineOf, maxNodesOf, slicesOf } from '../machines';
+import {
+  machineAtNodes,
+  machineLabel,
+  machineOf,
+  maxNodesOf,
+  slicesOf,
+} from '../../core/hardware/machines';
 import { CostBasis, H100_ID, relPriceOf, relPriceToDollars } from '../pricing';
 import { UiChip, UiWorkload } from '../results';
+import type { Scheduler } from '../../core/engine/sim/cost/select';
 import { VendorLogo } from './VendorLogo';
 
 export interface SweepControls {
@@ -19,6 +26,8 @@ export interface SweepControls {
   memoryOverlap: number;
   /** fraction of collective traffic hidden behind compute */
   commsOverlap: number;
+  /** how the streams overlap: the two fractions above, or the op graph */
+  scheduler?: Scheduler;
 }
 
 interface Props {
@@ -365,6 +374,26 @@ export function Sidebar(p: Props) {
 
       <section className="side-section">
         <h3>Overlap</h3>
+        <div className="cs-row ov-row">
+          <span className="ov-label">
+            Source
+            <span
+              className="info-i"
+              data-tip="Fractions: the two sliders below hide that share of HBM and interconnect traffic behind the widest stream. Op graph: each layer runs as a software-pipelined loop, its period the larger of the fullest stream and the longest dependency chain; the sliders are ignored."
+              aria-label="explanation"
+            >
+              ⓘ
+            </span>
+          </span>
+          <select
+            value={sweep.scheduler ?? 'naive'}
+            onChange={(e) => p.onSweep({ ...sweep, scheduler: e.target.value as Scheduler })}
+            aria-label="overlap source"
+          >
+            <option value="naive">Fractions</option>
+            <option value="dag">Op graph</option>
+          </select>
+        </div>
         <OverlapRow
           label="Memory"
           tip="Fraction of HBM traffic your kernels hide behind compute (and comms); the rest is paid serially. At 100%, HBM waits fully behind compute; ~90% is typical for well-fused kernels."

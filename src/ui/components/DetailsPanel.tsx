@@ -95,7 +95,12 @@ export function DetailsPanel({ result: r, group, model, overlap, basis, onClose 
           </dl>
           <div className="time-card">
             <ComponentBars c={pf.components} bound={pf.boundBy} />
-            <StepTimeBar c={pf.components} a={overlap} per={pp > 1 ? 'stage' : 'batch'} />
+            <StepTimeBar
+              c={pf.components}
+              visible={pf.visible}
+              a={overlap}
+              per={pp > 1 ? 'stage' : 'batch'}
+            />
           </div>
         </>
       )}
@@ -147,7 +152,7 @@ export function DetailsPanel({ result: r, group, model, overlap, basis, onClose 
           </dl>
           <div className="time-card">
             <ComponentBars c={dec.components} bound={dec.boundBy} />
-            <StepTimeBar c={dec.components} a={overlap} per="step" />
+            <StepTimeBar c={dec.components} visible={dec.visible} a={overlap} per="step" />
           </div>
         </>
       )}
@@ -297,14 +302,38 @@ function HbmBar({ r, cap }: { r: UiResult; cap: number }) {
 
 const COMPONENT_LABEL = { compute: 'Compute', memory: 'Memory', comms: 'Comms' } as const;
 
+function scheduledBreakdown(busy: ComponentTimes, parts: ComponentTimes) {
+  const keys = ['compute', 'memory', 'comms'] as const;
+  const by = keys.reduce((x, y) => (parts[y] > parts[x] ? y : x));
+  const hidden: ComponentTimes = {
+    compute: Math.max(0, busy.compute - parts.compute),
+    memory: Math.max(0, busy.memory - parts.memory),
+    comms: Math.max(0, busy.comms - parts.comms),
+  };
+  return { parts, pool: { by, time: parts[by] }, hidden };
+}
+
 /**
  * Phase time as a stacked bar: each solid segment is the visible time a
  * component contributes under the tuned overlap, the pool winner first.
  * Work hidden behind the pool is hatched inside the pool's span —
  * concurrent, adding no wall-clock time.
  */
-function StepTimeBar({ c, a, per }: { c: ComponentTimes; a: UiOverlap; per: string }) {
-  const { parts, pool, hidden } = naiveOverlapBreakdown(c, a);
+function StepTimeBar({
+  c,
+  visible,
+  a,
+  per,
+}: {
+  c: ComponentTimes;
+  visible: ComponentTimes;
+  a: UiOverlap;
+  per: string;
+}) {
+  // the fractions have a closed-form breakdown; a scheduled trace reports
+  // its visible split directly, and everything past it ran hidden
+  const { parts, pool, hidden } =
+    a.scheduler === 'dag' ? scheduledBreakdown(c, visible) : naiveOverlapBreakdown(c, a);
   const total = parts.compute + parts.memory + parts.comms;
   if (total <= 0) return null;
   const order = [

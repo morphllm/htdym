@@ -51,10 +51,34 @@ The explorer ranks sharding configurations per chip, and drills into any one wit
 fabric view (the chips on their real interconnect) and an execution trace (the op
 graph, colored by what each op is bound on).
 
+## CLI
+
+The same engine as a command line, `estimate`, for scripting sweeps and pinning
+configurations in other repos. Build it once (`npm run build:cli`, a single
+node script at `dist/cli/estimate.mjs`, no runtime dependencies) and:
+
+```
+estimate models                                   # the presets
+estimate chips --model k3                         # chips, with the least chips that hold the weights
+estimate search k3 gb300-nvl72 32x1 --slo 20      # rank every sharding, streaming as it prices
+estimate top k3 b300 8x1 --phase prefill          # the same, silent
+estimate explain k3 b300 8x1 --sizes TP=8,EP=8    # one sharding, fully worked, with engine flags
+estimate sweep --model k3 --chips b300,gb300-nvl72 --machines 8x1,32x1 --slos none,20 --table
+```
+
+`--json` emits one row per line; `sweep` writes one file per cell and `report`
+re-renders them. Two knobs correct the simulator where its defaults mislead,
+both off unless asked for: `--state-slots N` (with `--spec-slots`,
+`--state-dtype`, `--mem-fraction`) reserves the recurrent-state slots a hybrid
+KV manager actually holds per sequence on linear-attention layers, and
+`--scheduler dag` reads overlap off the op graph instead of the two `--overlap`
+fractions. Every number is an estimate.
+
 ## Layout
 
 ```
 src/core   engine (lowering, placement search, cost backends), model & hardware specs
 src/ui     the explorer — leaderboard, fabric view, execution trace
+src/cli    the estimate command line (bundled by scripts/build-cli.mjs)
 tests      property / fuzz tests
 ```

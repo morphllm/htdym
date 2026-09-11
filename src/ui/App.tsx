@@ -24,7 +24,7 @@ import {
   machineKey,
   machineLabel,
   machineVariants,
-} from './machines';
+} from '../core/hardware/machines';
 import './app.css';
 
 function SailResearchLogo() {
@@ -115,8 +115,12 @@ export function App() {
   // stable identity so the baseline hook's change-detection key isn't
   // recomputed on unrelated renders
   const overlap = useMemo(
-    () => ({ memoryOverlap: sweep.memoryOverlap, commsOverlap: sweep.commsOverlap }),
-    [sweep.memoryOverlap, sweep.commsOverlap],
+    () => ({
+      memoryOverlap: sweep.memoryOverlap,
+      commsOverlap: sweep.commsOverlap,
+      scheduler: sweep.scheduler,
+    }),
+    [sweep.memoryOverlap, sweep.commsOverlap, sweep.scheduler],
   );
   const baseline = useHmvpBaseline(model, workload, overlap, chipsById[H100_ID]);
 
@@ -202,6 +206,7 @@ export function App() {
         workload,
         sweep.memoryOverlap,
         sweep.commsOverlap,
+        sweep.scheduler,
       ]);
       const prev = lastSearched.current;
       const stale = enabled.filter((c) => {
