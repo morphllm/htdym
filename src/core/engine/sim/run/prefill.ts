@@ -31,7 +31,7 @@ export function evaluatePrefill<TBackend extends CostBackend>(
   const pp = roleSize(deployment.mesh, 'PP');
 
   const stages = partitionIntoStages(model, pp);
-  const memory = memoryFootprint(model, deployment, stages, T);
+  const memory = memoryFootprint(model, deployment, stages, T, opts.statePool);
   // Throughput keeps one microbatch on every pipeline stage. TTFT runs
   // one request through the stages in sequence, so it has no PP multiplier.
   const residentSeqsPerChip = mode === 'throughput' ? (seqs / dpa) * pp : seqs;

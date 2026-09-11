@@ -18,11 +18,34 @@ export interface SimInput {
   };
 }
 
+// How a serving stack provisions the recurrent state of linear-attention
+// blocks. The simulator's default charges one state per resident sequence,
+// which is the pure-physics floor; real hybrid KV managers keep several
+// per request (SGLang: 3 with the radix cache off, 4 with extra_buffer_lazy,
+// 5 with extra_buffer) plus one per speculative draft token, and on a model
+// like Kimi K3 that pool, not the paged cache, caps concurrency.
+export interface StatePoolOptions {
+  // state slots reserved per resident sequence (1 = one working state)
+  slotsPerSeq: number;
+  // extra slots per sequence for speculative decoding intermediates
+  // (DSPARK: draft block + 1)
+  specSlots: number;
+  // bytes per state element for capacity, when the stack stores the state
+  // narrower than the model's stateBytes (2 = bf16). Capacity only: the
+  // HBM traffic the step streams keeps the model's dtype.
+  stateDtypeBytes?: number;
+}
+
+export const DEFAULT_STATE_POOL: StatePoolOptions = { slotsPerSeq: 1, specSlots: 0 };
+
 export interface EvalOptions<TBackend extends CostBackend> {
   // Skip the KV-residency feasibility gate: evaluate the step as if the
   // batch fit. Only for B_inf saturation diagnostics (batchSaturation's own
   // ceiling), never for reported operating points.
   ignoreKvCapacity?: boolean;
+  // reserved recurrent-state slots for linear-attention blocks; unset means
+  // DEFAULT_STATE_POOL (one slot, nothing speculative, the model's dtype)
+  statePool?: Partial<StatePoolOptions>;
   // bound per evaluation, then prices traces and candidate collectives
   costBackend: TBackend;
 }
@@ -53,8 +76,15 @@ export interface BaseEvaluation<TBackend extends CostBackend> {
 export interface MemoryFootprint {
   // resident weight bytes on the heaviest chip
   weightBytesPerChip: number;
-  // KV bytes one full-length sequence costs its group's chips (worst stage)
+  // bytes one full-length sequence costs its group's chips (worst stage):
+  // paged cache plus every reserved state slot, what actually divides HBM
   kvBytesPerSeqPerChip: number;
+  // the paged (growing) part of that: MLA latents, GQA heads, windows
+  pagedKvBytesPerSeqPerChip: number;
+  // the recurrent-state part, all reserved slots included
+  stateBytesPerSeqPerChip: number;
+  // slots that state part reserves per sequence (slotsPerSeq + specSlots)
+  stateSlotsPerSeq: number;
   // sequences one chip's free HBM holds KV for (worst stage). Each DPA
   // group holds its own sequences, so the machine total is dpa times this.
   maxResidentSeqsPerChip: number;

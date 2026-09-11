@@ -242,11 +242,7 @@ export function blockKvBytesParts(
   len: number,
   access: 'store' | 'read',
 ): KvByteParts {
-  if (b.attn.kind === 'linear')
-    return {
-      core: b.attn.valueHeads * b.attn.headDim * b.attn.valueHeadDim * b.attn.stateBytes,
-      indexer: 0,
-    };
+  if (b.attn.kind === 'linear') return { core: blockStateBytes(b), indexer: 0 };
   if (b.attn.kind === 'mla') {
     const { dc, dRope, dsa } = b.attn;
     const latentLen = access === 'read' && dsa ? Math.min(len, dsa.topk) : len;
@@ -275,6 +271,17 @@ export function blockKvBytesParts(
       ? compressedEntries * a.indexer.headDim * DTYPE_BYTES[a.indexer.cacheDtype]
       : 0,
   };
+}
+
+// Bytes of recurrent state one sequence holds for one linear-attention
+// block (0 for every other kind). stateBytes overrides the model's state
+// dtype, for a serving stack that keeps the state narrower than the model
+// says (SGLang's --mamba-ssm-dtype bf16).
+export function blockStateBytes(b: BlockSpec, stateBytes?: number): number {
+  if (b.attn.kind !== 'linear') return 0;
+  return (
+    b.attn.valueHeads * b.attn.headDim * b.attn.valueHeadDim * (stateBytes ?? b.attn.stateBytes)
+  );
 }
 
 export function blockKvBytes(

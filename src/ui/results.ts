@@ -55,6 +55,11 @@ export interface UiResult {
     // HBM left for KV after the weights land: what actually caps batch
     kvSpaceBytesPerChip: number;
     kvBytesPerSeqPerChip: number;
+    // the paged and reserved-state parts of kvBytesPerSeqPerChip, and how
+    // many state slots the latter reserves per sequence
+    pagedKvBytesPerSeqPerChip?: number;
+    stateBytesPerSeqPerChip?: number;
+    stateSlotsPerSeq?: number;
     // machine total (per-chip residency x DPA groups)
     maxResidentSeqs: number;
   };

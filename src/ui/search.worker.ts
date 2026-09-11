@@ -154,6 +154,9 @@ function toRow(
       weightBytesPerChip: dec.memory.weightBytesPerChip,
       kvSpaceBytesPerChip: Math.max(0, chip.hbmCapacity - dec.memory.weightBytesPerChip),
       kvBytesPerSeqPerChip: dec.memory.kvBytesPerSeqPerChip,
+      pagedKvBytesPerSeqPerChip: dec.memory.pagedKvBytesPerSeqPerChip,
+      stateBytesPerSeqPerChip: dec.memory.stateBytesPerSeqPerChip,
+      stateSlotsPerSeq: dec.memory.stateSlotsPerSeq,
       maxResidentSeqs: dec.memory.maxResidentSeqsPerChip * dpa,
     },
     decode: {
